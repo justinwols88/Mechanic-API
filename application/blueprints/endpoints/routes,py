@@ -1,0 +1,18 @@
+from flask import Blueprint, current_app, jsonify
+
+endpoints_bp = Blueprint('endpoints', __name__)
+
+@endpoints_bp.route('/endpoints', methods=['GET'])
+def list_endpoints():
+    routes_list = []
+    for rule in current_app.url_map.iter_rules():
+        if rule.endpoint != 'static' and rule.methods:
+            routes_list.append({
+                'endpoint': rule.endpoint,
+                'url': str(rule),
+                'methods': list(rule.methods)
+            })
+
+    schema = EndpointsResponseSchema()
+    result = schema.dump({'endpoints': routes_list})
+    return jsonify(result)

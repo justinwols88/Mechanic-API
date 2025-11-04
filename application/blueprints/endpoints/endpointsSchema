@@ -1,0 +1,9 @@
+from marshmallow import Schema, fields
+
+class EndpointSchema(Schema):
+    endpoint = fields.String(required=True)
+    url = fields.String(required=True)
+    methods = fields.List(fields.String(), required=True)
+
+class EndpointsResponseSchema(Schema):
+    endpoints = fields.List(fields.Nested(EndpointSchema))
