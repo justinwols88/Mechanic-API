@@ -32,7 +32,7 @@ def register_blueprints(app):
     from application.blueprints.service_ticket import service_ticket_bp
     from application.blueprints.mechanic import mechanic_bp
     
-    app.register_blueprint(customer_bp, url_prefix='/api')
-    app.register_blueprint(inventory_bp, url_prefix='/api/inventory')
-    app.register_blueprint(service_ticket_bp, url_prefix='/api/service-tickets')
-    app.register_blueprint(mechanic_bp, url_prefix='/api/mechanics')
+    app.register_blueprint(customer_bp, url_prefix='/customers')
+    app.register_blueprint(inventory_bp, url_prefix='/inventory')
+    app.register_blueprint(service_ticket_bp, url_prefix='/service-tickets')
+    app.register_blueprint(mechanic_bp, url_prefix='/mechanics')
