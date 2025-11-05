@@ -1,0 +1,260 @@
+{
+	"info": {
+		"_postman_id": "62b115fd-b9a6-450f-8957-cb2d38212309",
+		"name": "Mechanic_shop[",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "49025644",
+		"_collection_link": "https://justin-wold88-9318851.postman.co/workspace/justin's-Workspace~05566301-623e-467b-88de-620b8af7f038/collection/49025644-62b115fd-b9a6-450f-8957-cb2d38212309?action=share&source=collection_link&creator=49025644"
+	},
+	"item": [
+		{
+			"name": "Customers - Get all",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/customers/",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"customers",
+						""
+					]
+				},
+				"description": "Generated from cURL: curl -X GET \"{{baseUrl}}/customers/\""
+			},
+			"response": []
+		},
+		{
+			"name": "Customers - Login",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"email\":\"customer@example.com\",\"password\":\"password123\"}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/customers/login",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"customers",
+						"login"
+					]
+				},
+				"description": "Generated from cURL: curl -X POST \"{{baseUrl}}/customers/login\" -H \"Content-Type: application/json\" -d '{\"email\":\"customer@example.com\",\"password\":\"password123\"}'"
+			},
+			"response": []
+		},
+		{
+			"name": "Customers - My Tickets",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{jwt}}"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/customers/my-tickets",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"customers",
+						"my-tickets"
+					]
+				},
+				"description": "Generated from cURL: curl -X GET \"{{baseUrl}}/customers/my-tickets\" -H \"Authorization: Bearer {{jwt}}\""
+			},
+			"response": []
+		},
+		{
+			"name": "Mechanics - Get all",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/mechanics/",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"mechanics",
+						""
+					]
+				},
+				"description": "Generated from cURL: curl -X GET \"{{baseUrl}}/mechanics/\""
+			},
+			"response": []
+		},
+		{
+			"name": "Mechanics - Login",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"email\":\"mechanic@example.com\",\"password\":\"password123\"}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/mechanics/login",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"mechanics",
+						"login"
+					]
+				},
+				"description": "Generated from cURL: curl -X POST \"{{baseUrl}}/mechanics/login\" -H \"Content-Type: application/json\" -d '{\"email\":\"mechanic@example.com\",\"password\":\"password123\"}'"
+			},
+			"response": []
+		},
+		{
+			"name": "Mechanics - Leaderboard",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/mechanics/leaderboard",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"mechanics",
+						"leaderboard"
+					]
+				},
+				"description": "Generated from cURL: curl -X GET \"{{baseUrl}}/mechanics/leaderboard\""
+			},
+			"response": []
+		},
+		{
+			"name": "Service Tickets - Get all",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/service-tickets/",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"service-tickets",
+						""
+					]
+				},
+				"description": "Generated from cURL: curl -X GET \"{{baseUrl}}/service-tickets/\""
+			},
+			"response": []
+		},
+		{
+			"name": "Inventory - Get all",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/inventory/",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"inventory",
+						""
+					]
+				},
+				"description": "Generated from cURL: curl -X GET \"{{baseUrl}}/inventory/\""
+			},
+			"response": []
+		},
+		{
+			"name": "Mechanics - Leaderboard",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/mechanics/leaderboard",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"mechanics",
+						"leaderboard"
+					]
+				},
+				"description": "Generated from cURL: curl -X GET \"{{baseUrl}}/mechanics/leaderboard\""
+			},
+			"response": [
+				{
+					"name": "Mechanics - Leaderboard",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/mechanics/leaderboard",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"mechanics",
+								"leaderboard"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "",
+					"header": [
+						{
+							"key": "Server",
+							"value": "Werkzeug/3.1.3 Python/3.13.7"
+						},
+						{
+							"key": "Date",
+							"value": "Wed, 05 Nov 2025 05:33:03 GMT"
+						},
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						},
+						{
+							"key": "Content-Length",
+							"value": "486"
+						},
+						{
+							"key": "Connection",
+							"value": "close"
+						}
+					],
+					"cookie": [],
+					"body": "[\n    {\n        \"mechanic\": {\n            \"address\": \"789 Mechanic St\",\n            \"email\": \"mike@example.com\",\n            \"id\": 1,\n            \"name\": \"Mike Johnson\",\n            \"phone\": \"555-123-4567\",\n            \"specialization\": \"Engine Repair\"\n        },\n        \"ticket_count\": 1\n    },\n    {\n        \"mechanic\": {\n            \"address\": \"321 Tech Rd\",\n            \"email\": \"sarah@example.com\",\n            \"id\": 2,\n            \"name\": \"Sarah Wilson\",\n            \"phone\": \"555-987-6543\",\n            \"specialization\": \"Brake Systems\"\n        },\n        \"ticket_count\": 0\n    }\n]"
+				}
+			]
+		}
+	]
+}

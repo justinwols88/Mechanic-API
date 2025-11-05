@@ -1,26 +1,39 @@
 import os
-from datetime import timedelta
-class Config:
-    SQLALCHEMY_TRACK_MODIFICATIONS = False
-    SQLALCHEMY_DATABASE_URI = "mysql+mysqlconnector://root:{os.getenv('DB_PASSWORD')}@localhost/Mechanic_shop"
-    RATELIMIT_DEFAULT = "100 per day;20 per hour"
 
+class Config:
+    """Base configuration"""
+    SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key'
+    DEBUG = False
+    TESTING = False
+    
+    # Database configuration
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'sqlite:///mechanics.db'
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
+    
+    # Rate limiting
+    RATELIMIT_STORAGE_URL = "memory://"
+    
     # Cache configuration
-    CACHE_TYPE = 'SimpleCache'
+    CACHE_TYPE = "SimpleCache"
     CACHE_DEFAULT_TIMEOUT = 300
 
-    # Rate Limiting
-    RATELIMIT_STORAGE_URI = 'memory://http://localhost:6379/0'
-    
-    
-    # JWT Settings
-    JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=24)
-
 class DevelopmentConfig(Config):
+    """Development configuration"""
     DEBUG = True
-    # Ensure SQLite for development
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///mechanics.db'
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DEV_DATABASE_URL') or 'sqlite:///dev_mechanics.db'
 
 class ProductionConfig(Config):
-    DEBUG = False
-   
+    """Production configuration"""
+    SECRET_KEY = os.environ.get('SECRET_KEY')
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
+
+class TestingConfig(Config):
+    """Testing configuration"""
+    TESTING = True
+    SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
+
+config_map = {
+    'development': DevelopmentConfig,
+    'production': ProductionConfig,
+    'testing': TestingConfig
+}

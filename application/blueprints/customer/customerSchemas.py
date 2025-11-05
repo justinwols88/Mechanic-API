@@ -5,8 +5,8 @@ class CustomerSchema(Schema):
     id = fields.Int(dump_only=True)
     name = fields.Str(required=True)
     email = fields.Email(required=True)
-    phone = fields.Str()  # ✅ Use 'missing'
-    address = fields.Str()  # ✅ Use 'missing'
+    phone = fields.Str(load_default="")
+    address = fields.Str(load_default="")
     password = fields.Str(load_only=True, required=True)
     
     @validates('email')

@@ -1,165 +1,173 @@
-from flask import request, jsonify
+# mechanic/routes.py
+from flask import Blueprint, request, jsonify
 from application.extensions import db
-from application.models import Customer
+from application.models import Mechanic, service_mechanic
+from application.blueprints.mechanic.mechanicSchemas import mechanic_schema, mechanics_schema, login_schema
+from auth.tokens import encode_mechanic_token, mechanic_token_required
+from sqlalchemy import func, desc
+
+mechanic_bp = Blueprint('mechanic', __name__)
+
+# Mechanic Login
+from flask import Blueprint, request, jsonify
+from application.extensions import db, limiter, cache
+from application.models import Customer, ServiceTicket
 from application.blueprints.customer.customerSchemas import customer_schema, customers_schema, login_schema
-from application.utils.jwt import encode_token, token_required
-from . import customer_bp
+from auth.tokens import encode_token, token_required
 
+customer_bp = Blueprint('customer', __name__)
 
+# Apply default rate limiting to all customer routes
+@customer_bp.before_request
+@limiter.limit("100 per hour")
+def before_request():
+    pass
 
-@customer_bp.route('/<int:customer_id>', methods=['PUT'])
-@token_required
-def update_customer(customer_id):
-    """Update a customer"""
-    customer = Customer.query.get_or_404(customer_id)
-    data = request.get_json()
-    
-    errors = customer_schema.validate(data, partial=True)
+# Customer Login
+@customer_bp.route('/login', methods=['POST'])
+@limiter.limit("10 per minute")
+def login():
+    errors = login_schema.validate(request.json)
     if errors:
-        return jsonify({'errors': errors}), 400
+        return jsonify(errors), 400
     
-    if 'name' in data:
-        customer.name = data['name']
-    if 'email' in data:
-        existing = Customer.query.filter(
-            Customer.email == data['email'],
-            Customer.id != customer_id
-        ).first()
-        if existing:
-            return jsonify({'error': 'Email already taken'}), 400
-        customer.email = data['email']
-    if 'phone' in data:
-        customer.phone = data['phone']
-    if 'address' in data:
-        customer.address = data['address']
-    if 'password' in data:
-        customer.set_password(data['password'])
+    data = request.json
+    customer = Customer.query.filter_by(email=data['email']).first()
     
-    db.session.commit()
-    return jsonify(customer_schema.dump(customer))
-
-@customer_bp.route('/<int:customer_id>', methods=['DELETE'])
-@token_required
-def delete_customer(customer_id):
-    """Delete a customer"""
-    customer = Customer.query.get_or_404(customer_id)
-    db.session.delete(customer)
-    db.session.commit()
-    return jsonify({'message': 'Customer deleted successfully'})
-
-@customer_bp.route('/register', methods=['POST'])
-def register_customer():
-    """Register a new customer"""
-    data = request.get_json()
-    
-    errors = customer_schema.validate(data)
-    if errors:
-        return jsonify({'errors': errors}), 400
-    
-    existing_customer = Customer.query.filter_by(email=data.get('email')).first()
-    if existing_customer:
-        return jsonify({'error': 'Customer with this email already exists'}), 400
-    
-    new_customer = Customer(
-        name=data.get('name'),
-        email=data.get('email'),
-        phone=data.get('phone'),
-        address=data.get('address')
-    )
-    
-    if 'password' in data:
-        new_customer.set_password(data['password'])
-    
-    db.session.add(new_customer)
-    db.session.commit()
-    
-    token = encode_token(new_customer.id, 'customer')
-    
-    return jsonify({
-        'message': 'Customer created successfully',
-        'token': token,
-        'customer': customer_schema.dump(new_customer)
-    }), 201
-
-@customer_bp.route('/profile', methods=['GET'])
-@token_required
-def get_customer_profile():
-    """Get current customer profile"""
-    customer_id = getattr(request, 'user_id', None)
-    customer = Customer.query.get_or_404(customer_id)
-    return jsonify(customer_schema.dump(customer))
-
-@customer_bp.route('/my-tickets', methods=['GET'])
-@token_required
-def get_my_tickets():
-    """Get service tickets for the current customer"""
-    customer_id = getattr(request, 'user_id', None)
-    
-    from application.models import ServiceTicket
-    from application.blueprints.service_ticket.serviceTicketSchemas import service_tickets_schema
-    
-    tickets = ServiceTicket.query.filter_by(customer_id=customer_id).all()
-    
-    return jsonify({
-        'customer_id': customer_id,
-        'tickets': service_tickets_schema.dump(tickets)
-    })
-
-customer_bp.route('/login', methods=['POST'])
-def login_customer():
-    """Customer login - SINGLE DEFINITION"""
-    data = request.get_json()
-    
-    errors = login_schema.validate(data)
-    if errors:
-        return jsonify({'errors': errors}), 400
-    
-    customer = Customer.query.filter_by(email=data.get('email')).first()
-    
-    if customer and customer.check_password(data.get('password')):
-        token = encode_token(customer.id, 'customer')
-        return jsonify({
-            'message': 'Login successful',
-            'token': token,
-            'customer': customer_schema.dump(customer)
-        })
+    if customer and customer.check_password(data['password']):
+        token = encode_token(customer.id)
+        return jsonify({'token': token}), 200
     else:
         return jsonify({'message': 'Invalid credentials'}), 401
 
-@customer_bp.route('/logout', methods=['POST'])
+# Get customer's tickets (token required)
+@customer_bp.route('/my-tickets', methods=['GET'])
 @token_required
-def logout_customer():
-    """Customer logout"""
-    return jsonify({'message': 'Logout successful'})
+def get_my_tickets(customer_id):
+    tickets = ServiceTicket.query.filter_by(customer_id=customer_id).all()
+    return jsonify([ticket.to_dict() for ticket in tickets])
 
+# Get all customers with pagination and caching
 @customer_bp.route('/', methods=['GET'])
-@token_required
-def get_all_customers():
-    """Get all customers with pagination"""
+@cache.cached(timeout=300, query_string=True)
+def get_customers():
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 10, type=int)
     
-    pagination = Customer.query.paginate(
+    customers = Customer.query.paginate(
         page=page, 
         per_page=per_page, 
         error_out=False
     )
     
     return jsonify({
-        'customers': customers_schema.dump(pagination.items),
-        'total': pagination.total,
-        'pages': pagination.pages,
-        'current_page': page,
-        'per_page': per_page
+        'customers': [customer.to_dict() for customer in customers.items],
+        'total': customers.total,
+        'pages': customers.pages,
+        'current_page': page
     })
 
+# Other CRUD routes
 @customer_bp.route('/<int:customer_id>', methods=['GET'])
-@token_required
 def get_customer(customer_id):
-    """Get a specific customer"""
     customer = Customer.query.get_or_404(customer_id)
     return jsonify(customer_schema.dump(customer))
 
+@customer_bp.route('/', methods=['POST'])
+def create_customer():
+    data = request.json
+    errors = customer_schema.validate(data)
+    if errors:
+        return jsonify(errors), 400
+    
+    customer = customer_schema.load(data)
+    customer.set_password(data['password'])
+    
+    db.session.add(customer)
+    db.session.commit()
+    return jsonify(customer_schema.dump(customer)), 201
 
+@customer_bp.route('/<int:customer_id>', methods=['PUT'])
+@token_required
+def update_customer(customer_id, token_customer_id):
+    if customer_id != int(token_customer_id):
+        return jsonify({'message': 'Unauthorized'}), 403
+        
+    customer = Customer.query.get_or_404(customer_id)
+    data = request.json
+    customer = customer_schema.load(data, instance=customer)
+    db.session.commit()
+    return jsonify(customer_schema.dump(customer))
 
+@customer_bp.route('/<int:customer_id>', methods=['DELETE'])
+@token_required
+def delete_customer(customer_id, token_customer_id):
+    if customer_id != int(token_customer_id):
+        return jsonify({'message': 'Unauthorized'}), 403
+        
+    customer = Customer.query.get_or_404(customer_id)
+    db.session.delete(customer)
+    db.session.commit()
+    return '', 204
 
+# Mechanic Leaderboard
+@mechanic_bp.route('/leaderboard', methods=['GET'])
+def get_mechanics_leaderboard():
+    mechanics = Mechanic.query\
+        .outerjoin(service_mechanic)\
+        .group_by(Mechanic.id)\
+        .order_by(desc(func.count(service_mechanic.c.mechanic_id)))\
+        .all()
+    
+    return jsonify([{
+        'mechanic': mechanic_schema.dump(mechanic),
+        'ticket_count': len(mechanic.service_tickets)
+    } for mechanic in mechanics])
+
+# Other CRUD routes for mechanics (with mechanic token required for some)
+@mechanic_bp.route('/', methods=['GET'])
+def get_mechanics():
+    mechanics = Mechanic.query.all()
+    return jsonify(mechanics_schema.dump(mechanics))
+
+@mechanic_bp.route('/<int:mechanic_id>', methods=['GET'])
+def get_mechanic(mechanic_id):
+    mechanic = Mechanic.query.get_or_404(mechanic_id)
+    return jsonify(mechanic_schema.dump(mechanic))
+
+@mechanic_bp.route('/', methods=['POST'])
+def create_mechanic():
+    data = request.json
+    errors = mechanic_schema.validate(data)
+    if errors:
+        return jsonify(errors), 400
+    
+    mechanic = mechanic_schema.load(data)
+    mechanic.set_password(data['password'])
+    
+    db.session.add(mechanic)
+    db.session.commit()
+    return jsonify(mechanic_schema.dump(mechanic)), 201
+
+@mechanic_bp.route('/<int:mechanic_id>', methods=['PUT'])
+@mechanic_token_required
+def update_mechanic(mechanic_id, token_mechanic_id):
+    if mechanic_id != token_mechanic_id:
+        return jsonify({'message': 'Unauthorized'}), 403
+        
+    mechanic = Mechanic.query.get_or_404(mechanic_id)
+    data = request.json
+    mechanic = mechanic_schema.load(data, instance=mechanic)
+    db.session.commit()
+    return jsonify(mechanic_schema.dump(mechanic))
+
+@mechanic_bp.route('/<int:mechanic_id>', methods=['DELETE'])
+@mechanic_token_required
+def delete_mechanic(mechanic_id, token_mechanic_id):
+    if mechanic_id != token_mechanic_id:
+        return jsonify({'message': 'Unauthorized'}), 403
+        
+    mechanic = Mechanic.query.get_or_404(mechanic_id)
+    db.session.delete(mechanic)
+    db.session.commit()
+    return '', 204

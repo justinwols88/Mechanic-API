@@ -1,5 +1,6 @@
+# blueprints/inventory/__init__.py
 from flask import Blueprint
 
-inventory_bp = Blueprint('inventory', __name__)
+inventory_bp = Blueprint('inventory', __name__, url_prefix='/inventory')
 
-from application.blueprints.inventory import routes
+from . import routes
