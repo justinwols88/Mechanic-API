@@ -1,25 +1,55 @@
 # Mechanic Shop API
 
+/mechanics_shop
+├── /auth
+│   ├── __init__.py
+│   └── tokens.py
+├── /application
+│   ├── __init__.py - create_app() lives here
+│   ├── extensions.py
+│   ├── /blueprints
+│   │    ├── /customer
+│   │    │    ├──__init__.py
+│   │    │    ├──customerSchemas.py
+│   │    │    ├──routes.py
+│   │    ├── /inventory
+│   │    │    ├──__init__.py
+│   │    │    ├──inventorySchemas.py
+│   │    │    ├──routes.py
+│   │    ├── /mechanic
+│   │    │    ├──__init__.py
+│   │    │    ├──mechanicSchemas.py
+│   │    │    ├──routes.py
+│   │    └── /service_ticket
+│   │        ├──__init__.py
+│   │        ├──routes.py
+│   │        ├──serviceTicketSchemas.py
+│   ├── /static    <--- New Folder
+│   │   └── swagger.yaml   <--- New File
+│   └── models.py
+├── app.py
+├── requirements.txt
+└── setup.py
+├── run.py
+└── config.py
+
 A Flask-based REST API for managing a mechanic shop with mechanics and service tickets.
 
 ## Setup
 
 1. Clone the repository
-
 2. Install dependencies:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-3. Set up the database:
+1. Set up the database:
 
 ```bash
 flask db upgrade
-```
-
-4. Run the application:
-
+``'
+1. Run the application:
 ```bash
 flask run
 ```
@@ -31,9 +61,9 @@ POST /mechanics/ - Create a new mechanic
 
 GET /mechanics/ - Get all mechanics
 
-PUT /mechanics/<id> - Update a mechanic
+PUT /mechanics/id - Update a mechanic
 
-DELETE /mechanics/<id> - Delete a mechanic
+DELETE /mechanics/id - Delete a mechanic
 
 Service Tickets
 POST /service-tickets/ - Create a new service ticket
@@ -52,6 +82,4 @@ PUT /service-tickets/<ticket_id>/remove-mechanic/<mechanic_id> - Remove mechanic
 6. Get All Service Tickets
 7. Assign Mechanic to Ticket
 8. Remove Mechanic from Ticket
-
-
 this assignment was created with :heart: Justin Wold

@@ -1,0 +1,451 @@
+openapi: 3.0.0
+info:
+  title: Mechanic API
+  description: A comprehensive REST API for managing auto repair shop operations
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: support@mechanicapi.com
+
+servers:
+  - url: http://localhost:5000
+    description: Development server
+
+tags:
+  - name: Authentication
+    description: User authentication and token management
+  - name: Mechanics
+    description: Mechanic management endpoints
+  - name: Customers
+    description: Customer management endpoints
+  - name: Inventory
+    description: Inventory management endpoints
+  - name: Service Tickets
+    description: Service ticket management endpoints
+
+paths:
+  # Authentication Routes
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: User login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                  example: "test"
+                password:
+                  type: string
+                  example: "test"
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+                  token_type:
+                    type: string
+                  expires_in:
+                    type: integer
+        '401':
+          description: Invalid credentials
+
+  # Mechanic Routes
+  /mechanic/register:
+    post:
+      tags:
+        - Mechanics
+      summary: Register a new mechanic
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - email
+                - password
+                - specialization
+              properties:
+                name:
+                  type: string
+                  example: "John Doe"
+                email:
+                  type: string
+                  format: email
+                  example: "john@example.com"
+                password:
+                  type: string
+                  example: "password123"
+                specialization:
+                  type: string
+                  example: "Engine Repair"
+                phone:
+                  type: string
+                  example: "123-456-7890"
+                address:
+                  type: string
+                  example: "123 Main St"
+      responses:
+        '201':
+          description: Mechanic registered successfully
+        '400':
+          description: Missing required fields
+        '409':
+          description: Email already registered
+        '500':
+          description: Internal server error
+
+  /mechanic/login:
+    post:
+      tags:
+        - Mechanics
+      summary: Mechanic login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "mechanic@example.com"
+                password:
+                  type: string
+                  example: "password123"
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                  mechanic:
+                    type: object
+        '401':
+          description: Invalid credentials
+
+  /mechanic/stats:
+    get:
+      tags:
+        - Mechanics
+      summary: Get mechanics with ticket counts
+      responses:
+        '200':
+          description: Statistics retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    mechanic:
+                      type: object
+                    ticket_count:
+                      type: integer
+
+  /mechanic/:
+    get:
+      tags:
+        - Mechanics
+      summary: Get all mechanics
+      responses:
+        '200':
+          description: Mechanics retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+
+  /mechanic/profile:
+    get:
+      tags:
+        - Mechanics
+      summary: Get current mechanic profile
+      responses:
+        '200':
+          description: Profile retrieved successfully
+        '401':
+          description: Unauthorized
+
+  # Customer Routes
+  /customers/login:
+    post:
+      tags:
+        - Customers
+      summary: Customer login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "customer@example.com"
+                password:
+                  type: string
+                  example: "password123"
+      responses:
+        '200':
+          description: Login successful
+        '401':
+          description: Invalid credentials
+
+  /customers/my-tickets:
+    get:
+      tags:
+        - Customers
+      summary: Get customer's service tickets
+      responses:
+        '200':
+          description: Customer tickets retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+
+  /customers/:
+    get:
+      tags:
+        - Customers
+      summary: Get all customers
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: Customers retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  customers:
+                    type: array
+                    items:
+                      type: object
+                  total:
+                    type: integer
+                  pages:
+                    type: integer
+                  current_page:
+                    type: integer
+
+    post:
+      tags:
+        - Customers
+      summary: Create a new customer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                email:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '201':
+          description: Customer created successfully
+
+  # Inventory Routes
+  /inventory/:
+    get:
+      tags:
+        - Inventory
+      summary: Get all inventory items
+      responses:
+        '200':
+          description: Inventory items retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+
+    post:
+      tags:
+        - Inventory
+      summary: Create a new inventory item
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                item_name:
+                  type: string
+                price:
+                  type: number
+                quantity:
+                  type: integer
+      responses:
+        '201':
+          description: Inventory item created successfully
+
+  /inventory/{item_id}:
+    get:
+      tags:
+        - Inventory
+      summary: Get specific inventory item
+      parameters:
+        - name: item_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Inventory item retrieved successfully
+        '404':
+          description: Item not found
+
+  # Service Ticket Routes
+  /service-tickets/:
+    get:
+      tags:
+        - Service Tickets
+      summary: Get all service tickets
+      responses:
+        '200':
+          description: Service tickets retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+
+    post:
+      tags:
+        - Service Tickets
+      summary: Create a new service ticket
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                description:
+                  type: string
+                priority:
+                  type: string
+      responses:
+        '201':
+          description: Service ticket created successfully
+
+  /service-tickets/{ticket_id}:
+    get:
+      tags:
+        - Service Tickets
+      summary: Get specific service ticket
+      parameters:
+        - name: ticket_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Service ticket retrieved successfully
+        '404':
+          description: Ticket not found
+
+  /service-tickets/{ticket_id}/parts:
+    post:
+      tags:
+        - Service Tickets
+      summary: Add parts to service ticket
+      parameters:
+        - name: ticket_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                part_id:
+                  type: integer
+                quantity:
+                  type: integer
+      responses:
+        '200':
+          description: Part added to ticket successfully
+
+  # Health Check
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Health check
+      responses:
+        '200':
+          description: API is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  app_name:
+                    type: string
+                  environment:
+                    type: string
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
