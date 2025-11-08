@@ -25,6 +25,7 @@ flask run
 ```
 
 ## API Endpoints
+
 Mechanics
 POST /mechanics/ - Create a new mechanic
 
