@@ -395,3 +395,15 @@ def get_customer_profile(customer_id):
         return jsonify(customer_schema.dump(customer))
     except Exception as e:
         return jsonify({'error': 'Failed to retrieve profile', 'details': str(e)}), 500
+    
+@customer_bp.route('/my-tickets', methods=['GET'])  # Should be '/my-tickets'
+@token_required
+def get_my_tickets(customer_id):
+    """
+    Get customer's service tickets
+    """
+    try:
+        tickets = ServiceTicket.query.filter_by(customer_id=customer_id).all()
+        return jsonify([ticket.to_dict() for ticket in tickets])
+    except Exception as e:
+        return jsonify({'error': 'Failed to retrieve tickets', 'details': str(e)}), 500
