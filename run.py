@@ -1,10 +1,10 @@
-from application import create_app
+from app import create_app
 
 app = create_app()
-print(f"App type: {type(app)}")
-print(f"App is None: {app is None}")
 
-if app is not None and __name__ == '__main__':
-    app.run(debug=True)
-else:
-    print("ERROR: app is None!")
+if __name__ == '__main__':
+    with app.app_context():
+        # If you need to create tables, do it here within the context
+        # But typically you should use migrations instead
+        # db.create_all()
+        app.run(debug=True)

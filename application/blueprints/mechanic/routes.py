@@ -1,9 +1,10 @@
+from application.models import Customer, ServiceTicket, Mechanic
+from application.extensions import db, cache
 from flask import request, jsonify
-from application.extensions import db, cache, limiter
-from application.models import Mechanic
 from application.blueprints.mechanic.mechanicSchemas import mechanic_schema, mechanics_schema, login_schema
-from auth.tokens import encode_token, token_required
+from auth.tokens import mechanic_token_required, token_required, encode_token
 from . import mechanic_bp
+from application.extensions import cache, limiter
 
 @mechanic_bp.route('/stats', methods=['GET'])
 def mechanic_stats():
@@ -32,14 +33,17 @@ def mechanic_stats():
     """
     try:
         mechanics = db.session.query(
-            Mechanic, 
-            db.func.count(Mechanic.service_tickets).label('ticket_count')
-        ).outerjoin(Mechanic.service_tickets).group_by(Mechanic.id).all()
+            Mechanic,
+            db.func.count(ServiceTicket.id).label('ticket_count')
+        ).outerjoin(ServiceTicket).group_by(Mechanic.id).all()
         
-        result = [{
-            "mechanic": mechanic_schema.dump(mechanic),
-            "ticket_count": ticket_count,
-        } for mechanic, ticket_count in mechanics]
+        result = [
+            {
+                'mechanic': mechanic_schema.dump(mechanic),
+                'ticket_count': count
+            }
+            for mechanic, count in mechanics
+        ]
         
         return jsonify(result)
     except Exception as e:
@@ -262,7 +266,7 @@ def login():
         mechanic = Mechanic.query.filter_by(email=data.get('email')).first()
         
         if mechanic and mechanic.check_password(data.get('password')):
-            token = encode_token(mechanic.id, "mechanic")
+            token = encode_token(mechanic.id)
             return jsonify({
                 "token": token,
                 "mechanic": mechanic_schema.dump(mechanic)
@@ -273,35 +277,10 @@ def login():
         return jsonify({'error': 'Login failed', 'details': str(e)}), 500
 
 @mechanic_bp.route('/profile', methods=['GET'])
-@token_required
-def mechanic_profile():
-    """
-    Get current mechanic profile
-    ---
-    tags:
-      - Mechanics
-    security:
-      - BearerAuth: []
-    responses:
-      200:
-        description: Profile retrieved successfully
-        schema:
-          $ref: '#/definitions/MechanicResponse'
-      401:
-        description: Unauthorized
-        schema:
-          $ref: '#/definitions/Error'
-      404:
-        description: Mechanic not found
-        schema:
-          $ref: '#/definitions/Error'
-      500:
-        description: Internal server error
-        schema:
-          $ref: '#/definitions/Error'
-    """
+@mechanic_token_required  # This passes mechanic_id to the function
+def mechanic_profile(mechanic_id):  # ✅ Must accept mechanic_id parameter
+    """Get current mechanic profile"""
     try:
-        mechanic_id = getattr(request, 'user_id', None)
         mechanic = Mechanic.query.get_or_404(mechanic_id)
         return jsonify(mechanic_schema.dump(mechanic))
     except Exception as e:
@@ -514,7 +493,6 @@ def delete_mechanic(mechanic_id):
     """
     try:
         mechanic = Mechanic.query.get_or_404(mechanic_id)
-        
         db.session.delete(mechanic)
         db.session.commit()
         cache.delete('mechanics_list')
@@ -522,8 +500,7 @@ def delete_mechanic(mechanic_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': 'Failed to delete mechanic', 'details': str(e)}), 500
-    
-# Add this to one of your blueprints, e.g., in mechanic/routes.py
+
 @mechanic_bp.route('/cache-test')
 @cache.cached(timeout=60)
 def cache_test():

@@ -1,73 +1,58 @@
-from flask import Flask
-from dotenv import load_dotenv
-from flasgger import Swagger
 import os
+from flask import Flask
+from .extensions import db, migrate, jwt, cors, limiter, cache, ma
+from flask import Flask
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+import redis
+from config import Config, TestConfig
 
-load_dotenv()
 
-def create_app():
+def create_app(config_class=None):
     app = Flask(__name__)
+
+    # Use TestConfig for testing if no config provided
+    if config_class is None:
+        if os.environ.get('TESTING') or os.environ.get('FLASK_ENV') == 'testing':
+            config_class = TestConfig
+        else:
+            config_class = Config# Use TestConfig for testing if no config provided
     
-    # Load configuration
-    from config import DevelopmentConfig
-    app.config.from_object(DevelopmentConfig)
+    # Use test config for tests, otherwise use default config
+    app.config.from_object('config.Config')
     
-    # Initialize extensions
-    from application.extensions import db, migrate, ma, cache, limiter
+    # Initialize extensions with the app
     db.init_app(app)
     migrate.init_app(app, db)
-    ma.init_app(app)
+    jwt.init_app(app)
+    cors.init_app(app)
+    limiter.init_app(app)
     cache.init_app(app)
+    ma.init_app(app)
+    
+    # Import models (important for migrations and relationships)
+    from application.models import Customer, Mechanic, Inventory, ServiceTicket, TicketPart, Vehicle
+    
+    # Import and register blueprints
+    from .blueprints.customer.routes import customer_bp
+    from .blueprints.mechanic.routes import mechanic_bp
+    from .blueprints.inventory.routes import inventory_bp
+    from .blueprints.service_ticket.routes import service_ticket_bp
+    from .blueprints.vehicles.routes import vehicles_bp
     
     # Register blueprints
-    with app.app_context():
-        register_blueprints(app)
-    
-    # Initialize rate limiter
-    limiter.init_app(app)
-    
-    # Initialize Swagger
-    swagger_config = {
-        "headers": [],
-        "specs": [
-            {
-                "endpoint": 'apispec',
-                "route": '/apispec.json',
-                "rule_filter": lambda rule: True,
-                "model_filter": lambda tag: True,
-            }
-        ],
-        "static_url_path": "/flasgger_static",
-        "swagger_ui": True,
-        "specs_route": "/apidocs/",
-        "title": "Mechanic API Documentation",
-        "uiversion": 3
-    }
-    
-    Swagger(app, config=swagger_config, parse=True)
-    
-    # DEBUG: Print all registered routes
-    print("\n=== REGISTERED ROUTES ===")
-    for rule in app.url_map.iter_rules():
-        print(f"Route: {rule.rule} -> {rule.endpoint}")
-    print("=== END REGISTERED ROUTES ===\n")
-    
-    return app  # ← MAKE SURE THIS LINE EXISTS!
-
-def register_blueprints(app):
-    """Register all blueprints"""
-    from application.blueprints.customer import customer_bp
-    from application.blueprints.inventory import inventory_bp
-    from application.blueprints.service_ticket import service_ticket_bp
-    from application.blueprints.mechanic import mechanic_bp
-    
     app.register_blueprint(customer_bp, url_prefix='/customers')
-    app.register_blueprint(inventory_bp, url_prefix='/inventory')
-    app.register_blueprint(service_ticket_bp, url_prefix='/service-tickets')
     app.register_blueprint(mechanic_bp, url_prefix='/mechanic')
+    app.register_blueprint(inventory_bp, url_prefix='/inventory')
+    app.register_blueprint(vehicles_bp, url_prefix='/vehicles')
+    app.register_blueprint(service_ticket_bp, url_prefix='/service-tickets')
+
     
-    print("✓ All blueprints registered:")
-    print("  - Customers: /customers")
-    print("  - Inventory: /inventory") 
-    print("  - Service Tickets: /service-tickets")
-    print("  - Mechanics: /mechanic")
+    # Print loaded routes for debugging
+    print("✓ Customer routes loaded")
+    print("✓ Mechanic routes loaded")
+    print("✓ Inventory routes loaded")
+    print("✓ Vehicle routes loaded")
+    print("✓ Service Ticket routes loaded")
+    
+    return app

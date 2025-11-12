@@ -1,10 +1,12 @@
 from marshmallow import fields, validates, ValidationError, Schema
-from application.extensions import ma
+from datetime import datetime
+from marshmallow.validate import Length, Range
+
 
 class InventorySchema(Schema):
     id = fields.Int(dump_only=True)
     item_name = fields.Str(required=True)
-    quantity = fields.Int()  # ✅ Use 'missing'
+    quantity = fields.Int(load_default=0)
     price = fields.Float()  # ✅ Use 'missing'
     description = fields.Str()  # ✅ Use 'missing'
     

@@ -1,0 +1,27 @@
+# Coverage.py configuration file
+# This is an INI format configuration file, not Python code
+# type: ignore
+# pyright: basic
+
+[run]
+source = 
+    application
+    app.py
+omit = 
+    tests/*
+    venv/*
+    */site-packages/*
+    */__pycache__/*
+
+[report]
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    if self.debug:
+    if settings.DEBUG
+    raise AssertionError
+    raise NotImplementedError
+    if 0:
+    if __name__ == .__main__.:
+    class .*\bProtocol\):
+    @(abc\.)?abstractmethod

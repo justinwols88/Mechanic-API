@@ -1,8 +1,9 @@
 from flask import request, jsonify
+from application.models import Customer, ServiceTicket, db, Inventory, Mechanic
+from application.extensions import db, cache
 from application.blueprints.inventory import inventory_bp
-from application.models import Inventory, db
 from application.blueprints.inventory.inventorySchemas import inventory_schema, inventories_schema
-from auth.tokens import mechanic_token_required
+from auth.tokens import mechanic_token_required, token_required, encode_token
 
 @inventory_bp.route('/', methods=['GET'])
 def get_inventory():
@@ -126,6 +127,9 @@ def create_inventory_item(mechanic_id):
     """
     try:
         data = request.json
+        if data is None:
+            return jsonify({'error': 'Request body must be JSON'}), 400
+            
         errors = inventory_schema.validate(data)
         if errors:
             return jsonify(errors), 400
@@ -216,6 +220,9 @@ def update_inventory_item(mechanic_id, item_id):
     try:
         item = Inventory.query.get_or_404(item_id)
         data = request.json
+        
+        if data is None:
+            return jsonify({'error': 'Request body must be JSON'}), 400
         
         if 'item_name' in data:
             item.name = data['item_name']
@@ -323,9 +330,6 @@ def get_low_stock_items():
 def get_inventory_by_category(category_name):
     """
     Get inventory items by category
-    ---
-    tags:
-      - Inventory
     parameters:
       - name: category_name
         in: path
@@ -349,3 +353,27 @@ def get_inventory_by_category(category_name):
         return jsonify([item.to_dict() for item in items])
     except Exception as e:
         return jsonify({'error': 'Failed to retrieve category items', 'details': str(e)}), 500
+
+def test_create_inventory_item(self, app, client):
+    """Test creating an inventory item with proper setup"""
+    with app.app_context():
+        # Create a mechanic for authentication
+        mechanic = Mechanic(
+            first_name="Test",
+            last_name="Mechanic", 
+            email="mechanic@example.com"
+        )
+        mechanic.set_password("password123")
+        db.session.add(mechanic)
+        db.session.commit()
+
+        # Use actual endpoint from your routes
+        response = client.post('/inventory/', json={  # ✅ Use actual endpoint
+            'name': 'Test Part',
+            'description': 'Test Description', 
+            'category': 'Test Category',
+            'price': 10.0,
+            'quantity_in_stock': 5
+        })
+
+        assert response.status_code in [201, 401]  # 201 created or 401 unauthorized

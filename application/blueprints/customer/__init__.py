@@ -1,5 +1,9 @@
+# app/routes/customers.py
 from flask import Blueprint
 
-customer_bp = Blueprint('customer', __name__)
+customers_bp = Blueprint('customers', __name__)
 
-from application.blueprints.customer import routes
+@customers_bp.route('/')
+def get_customers():
+    return "Customers route"
+__all__ = ['customers_bp']

@@ -1,0 +1,60 @@
+# tests/test_app_factory.py
+import unittest
+from unittest.mock import patch
+import sys
+import os
+from application import create_app
+from application.extensions import db
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+def create_test_app():
+    """Create a Flask app specifically for testing"""
+    from flask import Flask
+    from application.extensions import db
+    
+    app = Flask(__name__)
+    
+    # Test-specific configuration
+    app.config['TESTING'] = True
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    app.config['SECRET_KEY'] = 'test-secret-key'
+    app.config['WTF_CSRF_ENABLED'] = False
+    
+    # Initialize database
+    db.init_app(app)
+    
+    # Register blueprints (same as main app)
+    from application.blueprints.customer.routes import customer_bp
+    from application.blueprints.mechanic.routes import mechanic_bp
+    from application.blueprints.inventory.routes import inventory_bp
+    from application.blueprints.service_ticket.routes import service_ticket_bp
+    
+    app.register_blueprint(customer_bp, url_prefix='/customers')
+    app.register_blueprint(mechanic_bp, url_prefix='/mechanic')
+    app.register_blueprint(inventory_bp, url_prefix='/inventory')
+    app.register_blueprint(service_ticket_bp, url_prefix='/service-tickets')
+    
+    return app
+
+class TestBase(unittest.TestCase):
+    def setUp(self):
+        # Patch Flasgger validation
+        self.flasgger_patcher = patch('flasgger.utils.validate')
+        self.mock_validate = self.flasgger_patcher.start()
+        self.mock_validate.return_value = True
+        
+        # Create test app
+        self.app = create_test_app()
+        self.client = self.app.test_client()
+        
+        # Create database tables
+        with self.app.app_context():
+            db.create_all()
+
+    def tearDown(self):
+        # Clean up database
+        with self.app.app_context():
+            db.drop_all()
+        self.flasgger_patcher.stop()

@@ -1,5 +1,10 @@
+from flask_jwt_extended import JWTManager
+import pytz
+
+jwt_manager = JWTManager()
+
 import jwt
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from functools import wraps
 from flask import request, jsonify
 
@@ -11,7 +16,7 @@ def encode_token(customer_id):
     payload = {
         'sub': str(customer_id),
         'type': 'customer',
-        'exp': datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        'exp': datetime.now(pytz.UTC) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     }
     return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
@@ -19,7 +24,7 @@ def encode_mechanic_token(mechanic_id):
     payload = {
         'sub': str(mechanic_id),
         'type': 'mechanic',
-        'exp': datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        'exp': datetime.now(pytz.UTC) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     }
     return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
