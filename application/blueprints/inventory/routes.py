@@ -377,3 +377,56 @@ def test_create_inventory_item(self, app, client):
         })
 
         assert response.status_code in [201, 401]  # 201 created or 401 unauthorized
+
+@inventory_bp.route('/debug/check-email/<email>', methods=['GET'])
+def debug_check_email(email):
+    """Check if a customer email exists"""
+    customer = Customer.query.filter_by(email=email).first()
+    if customer:
+        return jsonify({
+            'exists': True,
+            'id': customer.id,
+            'email': customer.email,
+            'has_password_hash': bool(customer.password_hash)
+        })
+    return jsonify({'exists': False})
+
+@inventory_bp.route('/debug/test-password', methods=['POST'])
+def debug_test_password():
+    """Test password verification"""
+    data = request.json
+    customer = Customer.query.filter_by(email=data['email']).first()
+    
+    if not customer:
+        return jsonify({'error': 'Customer not found'}), 404
+    
+    is_correct = customer.check_password(data['password'])
+    
+    return jsonify({
+        'customer_id': customer.id,
+        'password_correct': is_correct,
+        'has_password_hash': bool(customer.password_hash)
+    })
+
+@inventory_bp.route('/debug/create-test-customer', methods=['POST'])
+def debug_create_test_customer():
+    """Create a test customer for debugging"""
+    test_customer = Customer(
+        first_name="Test",
+        last_name="Customer", 
+        email="test@example.com",
+        phone="123-456-7890",
+        address="123 Test St"
+    )
+    test_customer.set_password("password123")
+    
+    try:
+        db.session.add(test_customer)
+        db.session.commit()
+        return jsonify({
+            'message': 'Test customer created',
+            'customer': test_customer.to_dict()
+        }), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
